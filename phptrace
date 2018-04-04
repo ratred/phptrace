@@ -10,6 +10,14 @@ where:
     -s - start with strace
 "
 
+# Check dependencies
+
+if ! command -v php-cgi >/dev/null 2>&1; then
+	echo 'php-cgi not found. You need to install this dependency by "apt-get install php-cgi" or "yum install php-cgi" or something'
+	exit
+fi
+
+
 ## Do not start scipious php files with root privileges        ##
 ## If your remove this check from script, your are real crazy. ##
 
