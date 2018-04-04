@@ -42,7 +42,7 @@ while getopts "a:u:c:r:h:s" opt
         u) URL=$OPTARG;;
         c) HTTP_COOKIE=$OPTARG;;
         r) HTTP_REFERER=$OPTARG;;
-        h) echo "$USAGE"
+        h) echo "$USAGE";;
 	s) STRACE=1
         esac
 done
