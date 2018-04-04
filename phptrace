@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+
+USAGE="$(basename "$0") [-a][-r][-c] -u <url> - start php-script from commandline as real cgi-server
+
+where:
+    -a - User agent. Default: some android
+    -r - HTTP_REFERER header. Default: none
+    -c - Cookie. Default: none
+    -u - http://<server_name>/<script_filename>?<query_string>. Note: script filename must be from OS root. Eg: /var/www/index.php
+    -s - start with strace
+"
+
+## Do not start scipious php files with root privileges        ##
+## If your remove this check from script, your are real crazy. ##
+
+if [ "$EUID" = 0 ]
+    then
+      echo "U re crazy =)"
+      exit
+fi
+
+# Define default values
+
+HTTP_USER_AGENT="Mozilla/5.0 (Linux; Android 6.0; LG-H422 Build/MRA58K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.81 Mobile Safari/537.36"
+HTTP_REFERER=""
+QUERY_STRING=""
+REMOTE_ADDR="192.168.0.1"
+REQUEST_METHOD="GET"
+HTTP_COOKIE=""
+HTTP_HOST=""
+SCRIPT_NAME=""
+ROOT=""
+URL=""
+SCRIPT_FILENAME=""
+REDIRECT_STATUS="CGI"
+SERVER_NAME=""
+
+while getopts "a:u:c:r:h:s" opt
+        do
+        case $opt in
+        a) HTTP_USER_AGENT=$OPTARG;;
+        u) URL=$OPTARG;;
+        c) HTTP_COOKIE=$OPTARG;;
+        r) HTTP_REFERER=$OPTARG;;
+        h) echo "$USAGE"
+	s) STRACE=1
+        esac
+done
+
+
+if [[ $URL = '' ]]; then 
+   echo 'You must specified -u. See help for details'
+   exit
+fi
+[[ $URL =~ (https*\:\/\/)([a-z0-9\.\-]+)([A-Za-z0-9\.\/\_\-]+)*\?*(.*) ]]
+PROTO=${BASH_REMATCH[1]}
+SERVER_NAME=${BASH_REMATCH[2]} 
+HTTP_HOST=$SERVER_NAME
+SCRIPT_FILENAME=${BASH_REMATCH[3]} 
+QUERY_STRING=${BASH_REMATCH[4]}
+SCRIPT_NAME=$SCRIPT_FILENAME
+
+export HTTP_USER_AGENT=$HTTP_USER_AGENT
+export HTTP_REFERER=$HTTP_REFERER
+export QUERY_STRING=$QUERY_STRING
+export REMOTE_ADDR=$REMOTE_ADDR
+export REQUEST_METHOD=$REQUEST_METHOD
+export HTTP_COOKIE=$HTTP_COOKIE
+export HTTP_HOST=$HTTP_HOST
+export SCRIPT_NAME=$SCRIPT_NAME
+export SCRIPT_FILENAME=$SCRIPT_FILENAME
+export REDIRECT_STATUS=$REDIRECT_STATUS
+export SERVER_NAME=$SERVER_NAME
+if [[ $STRACE = '1' ]]; then
+	strace php-cgi 2>&1
+else
+	php-cgi 2>&1;
+fi
+
